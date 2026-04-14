@@ -18,6 +18,13 @@
             --accent-sun: #fce7b2;     /* Warm yellow */
             --radius: 36px;
             --shadow: 0 12px 35px rgba(217, 93, 57, 0.08);
+            
+            /* Code Block Colors */
+            --code-bg: #1e1e1e;
+            --code-text: #d4d4d4;
+            --code-keyword: #569cd6;
+            --code-string: #ce9178;
+            --code-comment: #6a9955;
         }
 
         body {
@@ -226,6 +233,55 @@
         .badge-staff { background-color: var(--accent-rust); }
         .badge-admin { background-color: var(--text-main); }
 
+        /* --- HOW IT WORKS SPLIT LAYOUT --- */
+        .split-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 50px;
+            align-items: center;
+        }
+
+        .split-text h4 {
+            color: var(--text-main);
+            font-size: 1.4rem;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        .code-window {
+            background-color: var(--code-bg);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            overflow-x: auto;
+            position: relative;
+        }
+
+        /* Fake Mac Window Dots */
+        .code-window::before {
+            content: '';
+            display: block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff5f56;
+            box-shadow: 20px 0 0 #ffbd2e, 40px 0 0 #27c93f;
+            margin-bottom: 20px;
+        }
+
+        .code-window pre {
+            margin: 0;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--code-text);
+        }
+
+        .c-kw { color: var(--code-keyword); } /* Keyword */
+        .c-str { color: var(--code-string); } /* String */
+        .c-com { color: var(--code-comment); font-style: italic; } /* Comment */
+
         footer { margin-top: 40px; text-align: center; color: var(--text-muted); padding-bottom: 40px; }
 
         @media (max-width: 900px) {
@@ -234,6 +290,7 @@
             .button-group { justify-content: center; }
             nav { flex-wrap: wrap; gap: 15px; padding: 15px; }
             .page-content { padding: 30px; }
+            .split-section { grid-template-columns: 1fr; gap: 20px; }
         }
     </style>
 </head>
@@ -242,6 +299,7 @@
     <nav id="navbar">
         <a onclick="showPage('home')" class="active" id="nav-home">Home</a>
         <a onclick="showPage('how-to')" id="nav-how-to">How to Use</a>
+        <a onclick="showPage('how-it-works')" id="nav-how-it-works">How it Works</a>
         <a onclick="showPage('commands')" id="nav-commands">Commands</a>
         <a onclick="showPage('training')" id="nav-training">Staff Training</a>
         <a onclick="showPage('tos')" id="nav-tos">ToS</a>
@@ -251,7 +309,6 @@
     <div class="container">
         
         <div id="home-view">
-            
             <div class="hero fade-up delay-1">
                 <div class="hero-text">
                     <h1>Matchmaking,<br>Automated.</h1>
@@ -267,7 +324,6 @@
             </div>
 
             <div class="features-row">
-                
                 <div class="feature-card fade-up delay-2" style="border-top: 6px solid var(--accent-sun);">
                     <span class="tag">💖 Zero Manual Labor</span>
                     <h2>Blind Swiping UI</h2>
@@ -288,7 +344,6 @@
                     <p>When two people match, the bot generates a temporary private text channel just for them, managing all permissions.</p>
                     <p>To kill the awkward silence, Cupid’s AI reads both profiles and drops a custom Icebreaker based on shared hobbies!</p>
                 </div>
-
             </div>
         </div>
 
@@ -330,6 +385,77 @@
             <p>Want to check your stats or change your bio? Use the <b>`/my-profile`</b> command inside your ticket. You will see how many Green Flags you've earned and have the option to edit your intro. If you ever want to leave the matchmaking pool, simply click the <b>🗑️ Delete Dashboard</b> button in your ticket.</p>
         </div>
 
+        <div id="how-it-works-view" class="page-content">
+            <h2 style="color: var(--accent-rust); font-size: 2.5rem; text-align: center;">Under the Hood</h2>
+            <p style="text-align: center; margin-bottom: 50px;">Curious how the magic actually happens? Here is a look at the code powering the Red Panda matching ecosystem.</p>
+
+            <div class="split-section">
+                <div class="split-text">
+                    <h4>1. AI Profile Parsing</h4>
+                    <p>Instead of forcing users to fill out complicated web forms, we let them type naturally in Discord. When a user submits an intro, we send the raw text to a highly optimized Groq LLM.</p>
+                    <p>The AI extracts their exact age, normalizes their hobbies into clean arrays, and flags any toxic or NSFW content before it ever touches the database.</p>
+                </div>
+                <div class="code-window">
+<pre><code><span class="c-com"># Using Groq to parse Discord text into JSON</span>
+<span class="c-kw">async def</span> analyze_intro(text):
+    prompt = <span class="c-str">f"Extract age, gender, likes, and dislikes from: {text}"</span>
+    response = <span class="c-kw">await</span> client.chat.completions.create(
+        model=<span class="c-str">"llama3-8b-8192"</span>,
+        messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: prompt}],
+        response_format={<span class="c-str">"type"</span>: <span class="c-str">"json_object"</span>}
+    )
+    <span class="c-kw">return</span> json.loads(response.choices[0].message.content)</code></pre>
+                </div>
+            </div>
+
+            <div class="split-section" style="direction: rtl;">
+                <div class="split-text" style="direction: ltr;">
+                    <h4>2. The Strict Match Filter</h4>
+                    <p>When you click "Swipe", the bot doesn't just show you random people. It runs a lightning-fast mathematical check using Python Set Theory.</p>
+                    <p>It verifies that your ages are within the safe limit, ensures your genders match each other's preferences, and permanently hides profiles if your "Likes" intersect with their "Dislikes".</p>
+                </div>
+                <div class="code-window" style="direction: ltr;">
+<pre><code><span class="c-com"># Normalizing arrays to Python Sets for O(1) comparison</span>
+my_likes = <span class="c-kw">set</span>(x.lower() <span class="c-kw">for</span> x <span class="c-kw">in</span> me[<span class="c-str">'likes'</span>])
+their_dislikes = <span class="c-kw">set</span>(x.lower() <span class="c-kw">for</span> x <span class="c-kw">in</span> target[<span class="c-str">'dislikes'</span>])
+
+<span class="c-com"># Hard Dealbreaker Check</span>
+<span class="c-kw">if</span> my_likes.intersection(their_dislikes):
+    <span class="c-kw">continue</span> <span class="c-com"># Skip this profile instantly</span>
+
+<span class="c-com"># Require at least one shared hobby</span>
+shared = my_likes.intersection(their_likes)
+<span class="c-kw">if</span> <span class="c-kw">len</span>(shared) >= <span class="c-str">1</span>:
+    matches.append(target)</code></pre>
+                </div>
+            </div>
+
+            <div class="split-section">
+                <div class="split-text">
+                    <h4>3. Generating the Private Cafe</h4>
+                    <p>When a mutual "Right Swipe" happens, the bot takes over server administration. It creates a temporary, locked text channel that only the two users (and staff) can see.</p>
+                    <p>To break the ice, the bot passes those shared hobbies back to the AI to write a completely customized, fun conversation starter.</p>
+                </div>
+                <div class="code-window">
+<pre><code><span class="c-com"># Setting locked channel permissions</span>
+overwrites = {
+    guild.default_role: discord.PermissionOverwrite(read_messages=<span class="c-kw">False</span>),
+    user1: discord.PermissionOverwrite(read_messages=<span class="c-kw">True</span>),
+    user2: discord.PermissionOverwrite(read_messages=<span class="c-kw">True</span>)
+}
+
+<span class="c-com"># Creating the Cafe</span>
+cafe = <span class="c-kw">await</span> category.create_text_channel(
+    name=<span class="c-str">f"☕・cafe-{match_id}"</span>,
+    overwrites=overwrites
+)
+
+<span class="c-kw">await</span> cafe.send(<span class="c-str">f"You both love {shared_hobby}! {ai_icebreaker}"</span>)</code></pre>
+                </div>
+            </div>
+
+        </div>
+
         <div id="commands-view" class="page-content">
             <h2 style="color: var(--accent-rust); font-size: 2.5rem; text-align: center;">Command Glossary</h2>
             <p style="text-align: center; margin-bottom: 40px;">Everything you need to run the matchmaking ecosystem.</p>
@@ -351,9 +477,37 @@
             <p><b>/spawn-community-panel</b> <span class="badge badge-admin">Admin</span><br>Drops a permanent UI message containing buttons for users to "Open a Support Ticket" or "Apply for Staff".</p>
         </div>
 
-        <div id="training-view" class="page-content">
+      <div id="training-view" class="page-content">
             <h2 style="color: var(--accent-rust); font-size: 2.5rem; text-align: center;">Advanced Staff Training Guide</h2>
             <p style="text-align: center; margin-bottom: 40px;">Standard operating procedures for managing the Red Panda matchmaking ecosystem.</p>
+
+      <h3>📋 Enforcing the Profile Template</h2>
+            <p>To ensure the AI perfectly parses user introductions, your community must follow a strict format. While you can lightly customize the template for your server, you <b>must adhere to these absolute rules:</b></p>
+            <ul>
+                <li><b>The Trigger Symbol:</b> Somewhere in the introduction, you must include the <code>➤</code> symbol.</li>
+                <li><b>The Separator:</b> You must include the exact <code>﹌﹌﹌﹌  ʟᴏᴏᴋɪɴɢ ꜰᴏʀ ? ﹌﹌﹌﹌</code> divider so the AI can distinguish between the user's traits and their partner preferences.</li>
+                <li><b>Standard Fonts Only:</b> Do not use aesthetic Discord fonts for the property names (e.g., use "AGE", not "𝒜𝒢𝐸"). The bot's backend will not recognize them.</li>
+                <li><b>Strict Categories:</b> Do not add extra custom properties or remove any existing ones. The bot is strictly programmed to look for the exact set of keywords shown below.</li>
+            </ul>
+            <p>Here is the standard template you should provide to your server:</p>
+            
+            <div style="background-color: var(--bg-color); padding: 25px; border-radius: 15px; font-family: monospace; line-height: 1.8; color: var(--text-main); margin-bottom: 30px; border: 2px dashed var(--accent-bamboo); font-size: 1.05rem;">
+                ➤ ᴀɢᴇ ﹕ <br>
+                ➤ ꜱᴇxᴜᴀʟɪᴛʏ﹕<br>
+                ➤ ɢᴇɴᴅᴇʀ﹕<br>
+                ➤ ʟɪᴋᴇꜱ : <br>
+                ➤ ᴅɪꜱʟɪᴋᴇꜱ﹕<br>
+                ➤ ᴛɪᴍᴇᴢᴏɴᴇ﹕ <br>
+                ➤ ᴇxᴛʀᴀ﹕ <br>
+                <br>
+                ﹌﹌﹌﹌  ʟᴏᴏᴋɪɴɢ ꜰᴏʀ ? ﹌﹌﹌﹌<br>
+                ➤ ꜱᴇxᴜᴀʟɪᴛʏ﹕ <br>
+                ➤ ɢᴇɴᴅᴇʀ : <br>
+                ➤ ʟɪᴋᴇꜱ﹕<br>
+                ➤ ᴅɪꜱʟɪᴋᴇꜱ﹕ <br>
+                ➤ ᴛɪᴍᴇᴢᴏɴᴇ﹕<br>
+                ➤ ᴇxᴛʀᴀ﹕
+            </div>
 
             <h3>🚨 Handling "Underage" Auto-Flags</h3>
             <p>When a user types an age under 13, the bot's AI instantly catches it. The bot removes their typing permissions, renames their ticket to <code>underage-[name]</code>, and pings the `@staff` role in your designated staff channel.</p>
@@ -397,7 +551,7 @@
         </div>
 
         <div id="tos-view" class="page-content">
-            <h2 style="color: var(--accent-rust); font-size: 2.5rem;">📜 Terms of Service (ToS)</h2>
+             <h2 style="color: var(--accent-rust); font-size: 2.5rem;">📜 Terms of Service (ToS)</h2>
             <p><i>Last Updated: April 10, 2026</i></p>
             <p>By using <b>Red Panda Matches</b> (the "Bot"), you agree to these Terms of Service. If you do not agree, do not use the Bot.</p>
             
@@ -429,7 +583,7 @@
         </div>
 
         <div id="privacy-view" class="page-content">
-            <h2 style="color: var(--accent-rust); font-size: 2.5rem;">🔒 Privacy Policy</h2>
+             <h2 style="color: var(--accent-rust); font-size: 2.5rem;">🔒 Privacy Policy</h2>
             <p><i>Last Updated: April 8th, 2026</i></p>
             <p>This Privacy Policy explains how <b>Red Panda Matches</b> collects, uses, and protects your data.</p>
             
@@ -478,8 +632,8 @@
 
     <script>
         function showPage(pageId) {
-            // 1. Array of all our page names
-            const pages = ['home', 'how-to', 'commands', 'training', 'tos', 'privacy'];
+            // Updated array to include the new page
+            const pages = ['home', 'how-to', 'how-it-works', 'commands', 'training', 'tos', 'privacy'];
             
             // 2. Safely hide all pages
             pages.forEach(page => {
